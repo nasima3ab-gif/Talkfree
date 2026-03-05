@@ -1,5 +1,5 @@
 [build]
-  publish = "."
+  publish = "talkfree"
 
 [[redirects]]
   from = "/*"
