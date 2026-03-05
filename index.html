@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="backend-url" content="http://localhost:3000" />
+  <title>Talkfree by Nader</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <section id="authSection" class="panel auth-panel">
+      <h1>Discord Lite</h1>
+      <p class="subtitle">Real-time group + private chat</p>
+      <form id="authForm">
+        <label for="username">Username</label>
+        <input id="username" name="username" minlength="3" maxlength="20" required />
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" minlength="4" required />
+
+        <div class="auth-actions">
+          <button type="button" id="registerBtn">Register</button>
+          <button type="button" id="loginBtn">Login</button>
+        </div>
+        <p id="authMessage" class="hint"></p>
+      </form>
+    </section>
+
+    <section id="chatSection" class="chat-layout hidden">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>Conversations</h2>
+          <p id="meBadge"></p>
+        </div>
+
+        <div class="list-block">
+          <h3>Groups</h3>
+          <div class="inline-form">
+            <input id="newGroupName" placeholder="Create group name" maxlength="30" />
+            <button id="createGroupBtn">Create</button>
+          </div>
+          <ul id="groupList"></ul>
+        </div>
+
+        <div class="list-block">
+          <h3>Users</h3>
+          <ul id="userList"></ul>
+        </div>
+      </aside>
+
+      <section class="chat-main">
+        <header class="chat-header">
+          <h2 id="chatTitle">Select a chat</h2>
+          <p id="presenceText" class="presence"></p>
+        </header>
+
+        <div id="messageList" class="messages"></div>
+        <p id="typingText" class="typing"></p>
+
+        <form id="messageForm" class="message-form">
+          <input id="messageInput" placeholder="Write a message..." autocomplete="off" />
+          <button type="submit">Send</button>
+        </form>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

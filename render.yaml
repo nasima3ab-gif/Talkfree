@@ -1,0 +1,11 @@
+﻿services:
+  - type: web
+    name: talkfree-socket-server
+    env: node
+    plan: free
+    rootDir: talkfree
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: FRONTEND_ORIGIN
+        sync: false
