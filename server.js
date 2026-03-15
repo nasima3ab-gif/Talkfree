@@ -31,6 +31,8 @@ const groups = new Map(); // groupId -> { id, name, members:Set<string> }
 const messages = new Map(); // chatKey -> [{ from, text, ts }]
 const typingState = new Map(); // chatKey -> Set<username>
 const rateState = new Map(); // socket.id -> { count, ts }
+const calls = new Map(); // sessionId -> { id, caller, callee, accepted }
+const activeCallByUser = new Map(); // username -> sessionId
 
 function sanitizeUsername(input) {
   if (typeof input !== "string") return null;
@@ -52,6 +54,22 @@ function publicUsers() {
     username: u.username,
     online: u.online,
   }));
+}
+
+function emitToUser(username, event, payload) {
+  const user = users.get(username);
+  if (!user) return;
+  for (const sid of user.sockets) {
+    io.to(sid).emit(event, payload);
+  }
+}
+
+function cleanupCall(sessionId) {
+  const session = calls.get(sessionId);
+  if (!session) return;
+  calls.delete(sessionId);
+  activeCallByUser.delete(session.caller);
+  activeCallByUser.delete(session.callee);
 }
 
 function groupsForUser(username) {
@@ -305,6 +323,122 @@ io.on("connection", (socket) => {
     emitTyping(chat, access.key);
   });
 
+  socket.on("call:request", ({ token, target }) => {
+    const user = authorize(token);
+    if (!user) return;
+
+    const cleanTarget = sanitizeUsername(target);
+    if (!cleanTarget || !users.has(cleanTarget)) {
+      socket.emit("call:error", { message: "User not found." });
+      return;
+    }
+    if (cleanTarget === user.username) {
+      socket.emit("call:error", { message: "Cannot call yourself." });
+      return;
+    }
+    if (activeCallByUser.has(user.username) || activeCallByUser.has(cleanTarget)) {
+      socket.emit("call:error", { message: "User is busy." });
+      return;
+    }
+
+    const targetUser = users.get(cleanTarget);
+    if (!targetUser || !targetUser.online) {
+      socket.emit("call:error", { message: "User is offline." });
+      return;
+    }
+
+    const sessionId = crypto.randomUUID();
+    calls.set(sessionId, {
+      id: sessionId,
+      caller: user.username,
+      callee: cleanTarget,
+      accepted: false,
+    });
+    activeCallByUser.set(user.username, sessionId);
+    activeCallByUser.set(cleanTarget, sessionId);
+
+    emitToUser(cleanTarget, "call:incoming", { sessionId, from: user.username });
+    emitToUser(user.username, "call:ringing", { sessionId, to: cleanTarget });
+  });
+
+  socket.on("call:cancel", ({ token, sessionId }) => {
+    const user = authorize(token);
+    if (!user) return;
+
+    const session = calls.get(sessionId);
+    if (!session || session.caller !== user.username) return;
+
+    emitToUser(session.callee, "call:canceled", { sessionId, from: user.username });
+    cleanupCall(sessionId);
+  });
+
+  socket.on("call:reject", ({ token, sessionId }) => {
+    const user = authorize(token);
+    if (!user) return;
+
+    const session = calls.get(sessionId);
+    if (!session || session.callee !== user.username) return;
+
+    emitToUser(session.caller, "call:rejected", { sessionId, from: user.username });
+    cleanupCall(sessionId);
+  });
+
+  socket.on("call:accept", ({ token, sessionId }) => {
+    const user = authorize(token);
+    if (!user) return;
+
+    const session = calls.get(sessionId);
+    if (!session || session.callee !== user.username) return;
+
+    session.accepted = true;
+    emitToUser(session.caller, "call:accepted", { sessionId, from: user.username });
+  });
+
+  socket.on("call:offer", ({ token, sessionId, offer }) => {
+    const user = authorize(token);
+    if (!user) return;
+
+    const session = calls.get(sessionId);
+    if (!session || session.caller !== user.username) return;
+
+    emitToUser(session.callee, "call:offer", { sessionId, from: user.username, offer });
+  });
+
+  socket.on("call:answer", ({ token, sessionId, answer }) => {
+    const user = authorize(token);
+    if (!user) return;
+
+    const session = calls.get(sessionId);
+    if (!session || session.callee !== user.username) return;
+
+    emitToUser(session.caller, "call:answer", { sessionId, from: user.username, answer });
+  });
+
+  socket.on("call:ice", ({ token, sessionId, candidate }) => {
+    const user = authorize(token);
+    if (!user) return;
+
+    const session = calls.get(sessionId);
+    if (!session) return;
+
+    if (session.caller !== user.username && session.callee !== user.username) return;
+    const target = session.caller === user.username ? session.callee : session.caller;
+    emitToUser(target, "call:ice", { sessionId, candidate });
+  });
+
+  socket.on("call:end", ({ token, sessionId }) => {
+    const user = authorize(token);
+    if (!user) return;
+
+    const session = calls.get(sessionId);
+    if (!session) return;
+    if (session.caller !== user.username && session.callee !== user.username) return;
+
+    const target = session.caller === user.username ? session.callee : session.caller;
+    emitToUser(target, "call:ended", { sessionId, reason: "peer-ended" });
+    cleanupCall(sessionId);
+  });
+
   socket.on("disconnect", () => {
     rateState.delete(socket.id);
 
@@ -318,6 +452,15 @@ io.on("connection", (socket) => {
     if (!user.sockets.size) {
       user.online = false;
       publishUsers();
+      const sessionId = activeCallByUser.get(username);
+      if (sessionId) {
+        const session = calls.get(sessionId);
+        if (session) {
+          const target = session.caller === username ? session.callee : session.caller;
+          emitToUser(target, "call:ended", { sessionId, reason: "peer-disconnected" });
+        }
+        cleanupCall(sessionId);
+      }
     }
   });
 });

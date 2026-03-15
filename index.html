@@ -10,7 +10,7 @@
 <body>
   <main class="app">
     <section id="authSection" class="panel auth-panel">
-      <h1>Discord Lite</h1>
+      <h1>Talkfree</h1>
       <p class="subtitle">Real-time group + private chat</p>
       <form id="authForm">
         <label for="username">Username</label>
@@ -55,6 +55,27 @@
           <p id="presenceText" class="presence"></p>
         </header>
 
+        <div class="call-bar">
+          <div id="callStatus" class="call-status">Video call ready</div>
+          <div class="call-actions">
+            <button id="callBtn" type="button">Call</button>
+            <button id="hangupBtn" type="button" class="danger hidden">Hang up</button>
+            <button id="muteBtn" type="button" class="ghost hidden">Mute</button>
+            <button id="cameraBtn" type="button" class="ghost hidden">Camera off</button>
+          </div>
+        </div>
+
+        <div id="videoGrid" class="video-grid hidden">
+          <div class="video-tile">
+            <video id="localVideo" autoplay playsinline muted></video>
+            <span class="video-label">You</span>
+          </div>
+          <div class="video-tile">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <span class="video-label" id="remoteLabel">Remote</span>
+          </div>
+        </div>
+
         <div id="messageList" class="messages"></div>
         <p id="typingText" class="typing"></p>
 
@@ -65,6 +86,16 @@
       </section>
     </section>
   </main>
+
+  <div id="incomingCall" class="incoming-call hidden" aria-live="polite">
+    <div class="incoming-card">
+      <p id="incomingText" class="incoming-text">Incoming call</p>
+      <div class="incoming-actions">
+        <button id="acceptCallBtn" type="button">Accept</button>
+        <button id="rejectCallBtn" type="button" class="danger">Reject</button>
+      </div>
+    </div>
+  </div>
 
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
   <script src="app.js"></script>
