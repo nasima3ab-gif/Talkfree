@@ -34,18 +34,70 @@
           <p id="meBadge"></p>
         </div>
 
+        <div class="profile-card">
+          <div id="profileAvatar" class="avatar" aria-hidden="true"></div>
+          <div class="profile-info">
+            <p id="profileName"></p>
+            <p id="profileStatus" class="muted-text"></p>
+          </div>
+          <button id="editProfileBtn" type="button" class="ghost">Edit</button>
+        </div>
+
+        <div class="settings-block">
+          <label class="toggle">
+            <input id="notifToggle" type="checkbox" />
+            Desktop notifications
+          </label>
+          <label class="toggle">
+            <input id="soundToggle" type="checkbox" />
+            Sound alerts
+          </label>
+          <label class="settings-row">
+            Theme
+            <select id="themeSelect">
+              <option value="dark">Deep Night</option>
+              <option value="light">Paper Day</option>
+            </select>
+          </label>
+        </div>
+
         <div class="list-block">
           <h3>Groups</h3>
           <div class="inline-form">
             <input id="newGroupName" placeholder="Create group name" maxlength="30" />
             <button id="createGroupBtn">Create</button>
           </div>
+          <div class="inline-form">
+            <input id="inviteCodeInput" placeholder="Invite code" maxlength="20" />
+            <button id="joinInviteBtn">Join</button>
+          </div>
+          <p id="inviteFeedback" class="hint"></p>
           <ul id="groupList"></ul>
         </div>
 
         <div class="list-block">
           <h3>Users</h3>
           <ul id="userList"></ul>
+        </div>
+
+        <div class="list-block">
+          <h3>Pinned</h3>
+          <ul id="pinList"></ul>
+        </div>
+
+        <div class="list-block">
+          <h3>Bookmarks</h3>
+          <ul id="bookmarkList"></ul>
+        </div>
+
+        <div class="list-block">
+          <h3>Calls</h3>
+          <ul id="callHistoryList"></ul>
+        </div>
+
+        <div class="list-block">
+          <h3>Analytics</h3>
+          <div id="analyticsPanel" class="analytics-panel"></div>
         </div>
       </aside>
 
@@ -56,12 +108,16 @@
         </header>
 
         <div class="call-bar">
-          <div id="callStatus" class="call-status">Video call ready</div>
+          <div class="call-status">
+            <div id="callStatus">Video call ready</div>
+            <div id="callStats" class="call-stats hidden"></div>
+          </div>
           <div class="call-actions">
-            <button id="callBtn" type="button">Call</button>
-            <button id="hangupBtn" type="button" class="danger hidden">Hang up</button>
-            <button id="muteBtn" type="button" class="ghost hidden">Mute</button>
-            <button id="cameraBtn" type="button" class="ghost hidden">Camera off</button>
+            <button id="callBtn" type="button" aria-label="Start call">Call</button>
+            <button id="hangupBtn" type="button" class="danger hidden" aria-label="Hang up">Hang up</button>
+            <button id="muteBtn" type="button" class="ghost hidden" aria-label="Mute microphone">Mute</button>
+            <button id="cameraBtn" type="button" class="ghost hidden" aria-label="Toggle camera">Camera off</button>
+            <button id="shareBtn" type="button" class="ghost hidden" aria-label="Share screen">Share screen</button>
           </div>
         </div>
 
@@ -76,13 +132,57 @@
           </div>
         </div>
 
-        <div id="messageList" class="messages"></div>
-        <p id="typingText" class="typing"></p>
+        <div class="chat-tools">
+          <div class="search-row">
+            <input id="searchInput" placeholder="Search messages" />
+            <input id="searchUser" placeholder="User (optional)" />
+            <input id="searchFrom" type="date" />
+            <input id="searchTo" type="date" />
+            <button id="searchBtn" type="button">Search</button>
+            <button id="clearSearchBtn" type="button" class="ghost">Clear</button>
+          </div>
+          <p id="searchInfo" class="hint"></p>
+          <div id="groupTools" class="group-tools hidden">
+            <div class="group-actions">
+              <button id="createInviteBtn" type="button" class="ghost">Create invite</button>
+              <input id="inviteDisplay" readonly placeholder="Invite code" />
+              <button id="openModerationBtn" type="button" class="ghost">Moderation</button>
+            </div>
+            <div class="group-actions">
+              <label class="settings-row">
+                Slow mode (seconds)
+                <input id="slowModeInput" type="number" min="0" max="60" />
+              </label>
+              <button id="setSlowModeBtn" type="button">Set</button>
+            </div>
+          </div>
+          <div id="privateTools" class="group-tools hidden">
+            <div class="group-actions">
+              <button id="setSecretBtn" type="button" class="ghost">Set secret</button>
+              <span id="secretStatus" class="muted-text">Encryption off</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="messageList" class="messages" aria-live="polite"></div>
+        <p id="typingText" class="typing" aria-live="polite"></p>
 
         <form id="messageForm" class="message-form">
-          <input id="messageInput" placeholder="Write a message..." autocomplete="off" />
+          <button id="attachBtn" type="button" class="ghost" aria-label="Attach file">Attach</button>
+          <button id="emojiBtn" type="button" class="ghost" aria-label="Insert emoji">Emoji</button>
+          <input id="messageInput" placeholder="Write a message..." autocomplete="off" aria-label="Message input" />
           <button type="submit">Send</button>
         </form>
+        <input id="fileInput" type="file" class="hidden" />
+        <div id="filePreview" class="file-preview hidden"></div>
+        <div id="emojiPanel" class="emoji-panel hidden">
+          <button type="button" data-emoji="😀">😀</button>
+          <button type="button" data-emoji="😂">😂</button>
+          <button type="button" data-emoji="😍">😍</button>
+          <button type="button" data-emoji="👍">👍</button>
+          <button type="button" data-emoji="🔥">🔥</button>
+          <button type="button" data-emoji="🎉">🎉</button>
+        </div>
       </section>
     </section>
   </main>
@@ -93,6 +193,36 @@
       <div class="incoming-actions">
         <button id="acceptCallBtn" type="button">Accept</button>
         <button id="rejectCallBtn" type="button" class="danger">Reject</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="profileModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <h3>Edit profile</h3>
+      <label for="profileStatusInput">Status</label>
+      <input id="profileStatusInput" maxlength="60" />
+      <label for="profileBioInput">Bio</label>
+      <textarea id="profileBioInput" maxlength="160"></textarea>
+      <label for="profileAvatarInput">Avatar (image)</label>
+      <input id="profileAvatarInput" type="file" accept="image/*" />
+      <div class="modal-actions">
+        <button id="saveProfileBtn" type="button">Save</button>
+        <button id="closeProfileBtn" type="button" class="ghost">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="moderationModal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card wide">
+      <h3>Group moderation</h3>
+      <div id="moderationList" class="moderation-list"></div>
+      <div class="group-actions">
+        <input id="unbanInput" placeholder="Username to unban" />
+        <button id="unbanBtn" type="button" class="ghost">Unban</button>
+      </div>
+      <div class="modal-actions">
+        <button id="closeModerationBtn" type="button" class="ghost">Close</button>
       </div>
     </div>
   </div>
